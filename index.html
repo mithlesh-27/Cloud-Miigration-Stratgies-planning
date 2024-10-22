@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Migration Strategy Planner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        h1 {
+            color: #0073bb;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, output {
+            width: calc(100% - 16px);
+            padding: 10px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: #ddd;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #0073bb;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #0073bb;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .storage-range-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .storage-range-container output {
+            width: auto;
+            background: #0073bb;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #0073bb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #005a8c;
+        }
+        .reset-button {
+            background-color: #ff6f61;
+        }
+        .reset-button:hover {
+            background-color: #e55b50;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e9f7f9;
+            border: 1px solid #d1e5e5;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .loading {
+            display: none;
+            font-size: 16px;
+            color: #0073bb;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+        }
+        .roadmap {
+            margin-top: 20px;
+        }
+        .roadmap ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .roadmap li {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            position: relative;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        .roadmap li::before {
+            content: "📍";
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+        }
+        .roadmap .phase-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0073bb;
+        }
+        .roadmap .phase-details {
+            font-size: 14px;
+            color: #555;
+        }
+        .chart-container {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+        }
+        .chart-container .chart {
+            flex: 1;
+        }
+        .chart-container .details {
+            flex: 1;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: none; /* Hidden by default */
+        }
+        .chart-container .details.show {
+            display: block; /* Show when the report is generated */
+        }
+        .chart-container .details h2 {
+            color: #0073bb;
+            margin-top: 0;
+        }
+        .chart-container .details p {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cloud Migration Strategy Planner</h1>
+        <div class="input-group">
+            <label for="workload">Workload ID:</label>
+            <input type="number" id="workload" placeholder="Enter numeric workload ID" min="1" required>
+        </div>
+        <div class="input-group">
+            <label for="instance_type">Instance Type:</label>
+            <select id="instance_type" required>
+                <option value="">Select an instance type</option>
+                <option value="t2.micro">t2.micro - 1 vCPU, 1 GB RAM</option>
+                <option value="t2.small">t2.small - 1 vCPU, 2 GB RAM</option>
+                <option value="t2.medium">t2.medium - 2 vCPU, 4 GB RAM</option>
+                <option value="t3.micro">t3.micro - 2 vCPU, 1 GB RAM</option>
+                <option value="t3.small">t3.small - 2 vCPU, 2 GB RAM</option>
+                <option value="m5.large">m5.large - 2 vCPU, 8 GB RAM</option>
+                <option value="m5.xlarge">m5.xlarge - 4 vCPU, 16 GB RAM</option>
+                <!-- Add more instance types as needed -->
+            </select>
+        </div>
+        <div class="input-group">
+            <label for="storage_size">Storage Size (GB):</label>
+            <div class="storage-range-container">
+                <input type="range" id="storage_size" min="1" max="100" value="50" oninput="updateStorageValue(this.value)">
+                <output id="storage_value">50 GB</output>
+            </div>
+        </div>
+        <div class="input-group">
+            <label for="network_bandwidth">Network Bandwidth (Mbps):</label>
+            <input type="number" id="network_bandwidth" placeholder="Enter network bandwidth in Mbps" min="1" required>
+        </div>
+        <button onclick="generatePlan()">Generate Plan</button>
+        <button class="reset-button" onclick="resetForm()">Reset</button>
+        
+        <div id="loading" class="loading">Generating your plan, please wait...</div>
+        <div id="result" class="result"></div>
+        <div class="chart-container">
+            <div class="chart">
+                <canvas id="chart"></canvas>
+            </div>
+            <div class="details" id="details">
+                <h2>Migration Strategy & Planning</h2>
+                <p>Migration to the cloud involves several strategic steps and considerations. Below is an overview of key strategies:</p>
+                <h3>1. Assess Current Infrastructure</h3>
+                <p>Evaluate your existing infrastructure to understand what needs to be migrated. This includes assessing applications, data, and network dependencies.</p>
+                <h3>2. Choose the Right Cloud Service</h3>
+                <p>Select the appropriate cloud service model (IaaS, PaaS, SaaS) and deployment model (public, private, hybrid) based on your requirements.</p>
+                <h3>3. Plan Migration Strategy</h3>
+                <p>Decide on a migration strategy such as "lift and shift," re-platforming, or re-architecting. Each strategy has different impacts on your applications and costs.</p>
+                <h3>4. Execute the Migration</h3>
+                <p>Implement the migration according to the plan. This involves moving data, applications, and configurations to the cloud environment.</p>
+                <h3>5. Optimize and Monitor</h3>
+                <p>After migration, continuously monitor the performance and optimize resources to ensure cost efficiency and performance improvement.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let chartInstance = null;
+
+        function updateStorageValue(value) {
+            document.getElementById('storage_value').textContent = `${value} GB`;
+        }
+
+        function generatePlan() {
+            const workloadId = document.getElementById('workload').value.trim();
+            const instanceType = document.getElementById('instance_type').value;
+            const storageSize = document.getElementById('storage_size').value;
+            const networkBandwidth = document.getElementById('network_bandwidth').value;
+
+            // Input Validation
+            if (!workloadId || isNaN(workloadId) || !instanceType || !networkBandwidth || isNaN(networkBandwidth)) {
+                alert('Please enter valid numeric values for Workload ID and Network Bandwidth, and select an instance type.');
+                return;
+            }
+
+            // Show loading message
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('details').classList.remove('show'); // Hide details section
+            resetChart(); // Clear previous chart
+
+            fetch('https://u29p6fx60h.execute-api.ap-south-1.amazonaws.com/dev/cloud', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    workload_id: parseInt(workloadId),
+                    instance_type: instanceType,
+                    storage_size: storageSize,
+                    network_bandwidth: networkBandwidth
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(`Server error: ${data.error}`);
+                }
+
+                // Update result with additional features and improved formatting
+                const roadmapHtml = data.Roadmap.map(phase => `
+                    <li>
+                        <div class="phase-title">${phase.Phase}</div>
+                        <div class="phase-details">${phase.Duration} - ${phase.Activities}</div>
+                    </li>
+                `).join('');
+
+                document.getElementById('result').innerHTML = `
+                    <h2>Migration Plan</h2>
+                    <p><strong>Recommendation:</strong> ${data.Recommendation}</p>
+                    <p><strong>Estimated Cost:</strong> $${parseFloat(data.EstimatedCost).toFixed(2)}</p>
+                    <h3>Roadmap:</h3>
+                    <div class="roadmap">
+                        <ul>
+                            ${roadmapHtml}
+                        </ul>
+                    </div>
+                `;
+
+                // Show details section and render a chart for visualizing estimated costs
+                document.getElementById('details').classList.add('show');
+                renderChart(parseFloat(data.EstimatedCost));
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = `
+                    <p class="error">An error occurred: ${error.message}</p>
+                `;
+            })
+            .finally(() => {
+                document.getElementById('loading').style.display = 'none';
+            });
+        }
+
+        function renderChart(estimatedCost) {
+            const ctx = document.getElementById('chart').getContext('2d');
+            const totalAmount = 100; // Assuming total amount for percentage calculation
+
+            // Calculate the remaining percentage
+            const remainingAmount = totalAmount - estimatedCost;
+            const chartData = {
+                labels: ['Estimated Cost', 'Remaining Budget'],
+                datasets: [{
+                    data: [estimatedCost, remainingAmount],
+                    backgroundColor: [
+                        'rgba(0, 115, 187, 0.5)',
+                        'rgba(200, 200, 200, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(0, 115, 187, 1)',
+                        'rgba(200, 200, 200, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+
+            // Destroy previous chart instance if it exists
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    const value = tooltipItem.raw;
+                                    const percentage = ((value / totalAmount) * 100).toFixed(2);
+                                    return `${tooltipItem.label}: $${value.toFixed(2)} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function resetChart() {
+            // Clear the canvas and reset chart instance
+            const ctx = document.getElementById('chart').getContext('2d');
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        }
+
+        function resetForm() {
+            document.getElementById('workload').value = '';
+            document.getElementById('instance_type').value = '';
+            document.getElementById('storage_size').value = 50;
+            updateStorageValue(50);
+            document.getElementById('network_bandwidth').value = '';
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('details').classList.remove('show'); // Hide details section
+            resetChart(); // Clear chart on form reset
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+import boto3
+import json
+from decimal import Decimal
+
+# Initialize services
+discovery = boto3.client('discovery')
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('MigrationPlans')
+
+# Helper functions
+def analyze_data(data):
+    # Implement a more sophisticated analysis logic
+    return {
+        'cpu_usage': 45,
+        'memory_usage': 60,
+        'storage_usage': int(data.get('storage_size', 50))  # Default to 50 if not provided
+    }
+
+def calculate_cost(instance_type, storage_size):
+    instance_cost_map = {
+        't2.micro': Decimal('0.0116'),
+        't2.small': Decimal('0.023'),
+        't2.medium': Decimal('0.0464'),
+        't3.micro': Decimal('0.0120'),
+        't3.small': Decimal('0.0240'),
+        't3.medium': Decimal('0.0480')
+    }
+    storage_cost_per_gb = Decimal('0.1')
+    instance_cost = instance_cost_map.get(instance_type, Decimal('0'))
+    return (instance_cost + Decimal(storage_size) * storage_cost_per_gb) * 30  # Monthly cost
+
+def generate_recommendation(analysis_result):
+    cpu_usage = analysis_result['cpu_usage']
+    memory_usage = analysis_result['memory_usage']
+    
+    if cpu_usage < 50 and memory_usage < 50:
+        return "Use t2.micro instance or t3.micro instance for optimal cost."
+    elif cpu_usage < 80 and memory_usage < 75:
+        return "Use t2.small instance or t3.small instance to balance cost and performance."
+    else:
+        return "Use t2.medium instance or t3.medium instance for better performance and higher capacity."
+
+def generate_roadmap():
+    return [
+        {'Phase': 'Assessment', 'Duration': '2 weeks', 'Activities': 'Gather requirements, analyze current workload.'},
+        {'Phase': 'Planning', 'Duration': '4 weeks', 'Activities': 'Design migration strategy, select instance types.'},
+        {'Phase': 'Execution', 'Duration': '6 weeks', 'Activities': 'Migrate workloads, perform testing, optimize performance.'},
+        {'Phase': 'Validation', 'Duration': '2 weeks', 'Activities': 'Verify migration, ensure all functionalities are working.'}
+    ]
+
+# Lambda handler
+def lambda_handler(event, context):
+    try:
+        data = json.loads(event['body'])
+        workload_id = data.get('workload_id')
+        instance_type = data.get('instance_type')
+        storage_size = data.get('storage_size')
+
+        # Validate inputs
+        if not all([workload_id, instance_type, storage_size]):
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': 'Missing required fields'})
+            }
+
+        # Convert workload_id to a numeric type if necessary
+        try:
+            workload_id = Decimal(workload_id)
+        except (ValueError, TypeError):
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': 'Invalid workload_id format'})
+            }
+
+        # Data Analysis
+        analysis_result = analyze_data(data)
+        
+        # Cost Estimation
+        estimated_cost = calculate_cost(instance_type, storage_size)
+        
+        # Generate Recommendation
+        recommendation = generate_recommendation(analysis_result)
+        
+        # Generate Roadmap
+        roadmap = generate_roadmap()
+
+        # Store in DynamoDB
+        table.put_item(Item={
+            'workload_id': workload_id,
+            'InstanceType': instance_type,
+            'StorageSize': storage_size,
+            'AnalysisResult': json.dumps(analysis_result),
+            'EstimatedCost': str(estimated_cost),
+            'Recommendation': recommendation,
+            'Roadmap': json.dumps(roadmap)
+        })
+
+        # Return the response
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'Recommendation': recommendation,
+                'EstimatedCost': str(estimated_cost),
+                'Roadmap': roadmap
+            })
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': str(e)})
+        }
